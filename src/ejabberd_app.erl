@@ -31,7 +31,7 @@
 -behaviour(application).
 
 -export([start_modules/0, start/2, prep_stop/1, stop/1,
-	 init/0, opt_type/1]).
+   init/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -61,6 +61,7 @@ start(normal, _Args) ->
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
     ejabberd_riak_sup:start(),
+    start_modules(),
     ejabberd_sm:start(),
     cyrsasl:start(),
     % Profiling
@@ -69,7 +70,6 @@ start(normal, _Args) ->
     maybe_add_nameservers(),
     ext_mod:start(),
     ejabberd_auth:start(),
-    start_modules(),
     ejabberd_listener:start_listeners(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
@@ -108,8 +108,8 @@ init() ->
 
 loop() ->
     receive
-	_ ->
-	    loop()
+  _ ->
+      loop()
     end.
 
 db_init() ->
@@ -117,20 +117,20 @@ db_init() ->
     MyNode = node(),
     DbNodes = mnesia:system_info(db_nodes),
     case lists:member(MyNode, DbNodes) of
-	true ->
-	    ok;
-	false ->
-	    ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
-			  "the database is owned by ~p", [MyNode, DbNodes]),
-	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
-			  "or change node name in Mnesia", []),
-	    erlang:error(node_name_mismatch)
+  true ->
+      ok;
+  false ->
+      ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
+        "the database is owned by ~p", [MyNode, DbNodes]),
+      ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
+        "or change node name in Mnesia", []),
+      erlang:error(node_name_mismatch)
     end,
     case mnesia:system_info(extra_db_nodes) of
-	[] ->
-	    mnesia:create_schema([node()]);
-	_ ->
-	    ok
+  [] ->
+      mnesia:create_schema([node()]);
+  _ ->
+      ok
     end,
     ejabberd:start_app(mnesia, permanent),
     mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
@@ -185,8 +185,8 @@ connect_nodes() ->
 %% If ejabberd is running on some Windows machine, get nameservers and add to Erlang
 maybe_add_nameservers() ->
     case os:type() of
-	{win32, _} -> add_windows_nameservers();
-	_ -> ok
+  {win32, _} -> add_windows_nameservers();
+  _ -> ok
     end.
 
 add_windows_nameservers() ->
@@ -199,9 +199,9 @@ broadcast_c2s_shutdown() ->
     Children = ejabberd_sm:get_all_pids(),
     lists:foreach(
       fun(C2SPid) when node(C2SPid) == node() ->
-	      C2SPid ! system_shutdown;
-	 (_) ->
-	      ok
+        C2SPid ! system_shutdown;
+   (_) ->
+        ok
       end, Children).
 
 %%%
@@ -210,28 +210,28 @@ broadcast_c2s_shutdown() ->
 
 write_pid_file() ->
     case ejabberd:get_pid_file() of
-	false ->
-	    ok;
-	PidFilename ->
-	    write_pid_file(os:getpid(), PidFilename)
+  false ->
+      ok;
+  PidFilename ->
+      write_pid_file(os:getpid(), PidFilename)
     end.
 
 write_pid_file(Pid, PidFilename) ->
     case file:open(PidFilename, [write]) of
-	{ok, Fd} ->
-	    io:format(Fd, "~s~n", [Pid]),
-	    file:close(Fd);
-	{error, Reason} ->
-	    ?ERROR_MSG("Cannot write PID file ~s~nReason: ~p", [PidFilename, Reason]),
-	    throw({cannot_write_pid_file, PidFilename, Reason})
+  {ok, Fd} ->
+      io:format(Fd, "~s~n", [Pid]),
+      file:close(Fd);
+  {error, Reason} ->
+      ?ERROR_MSG("Cannot write PID file ~s~nReason: ~p", [PidFilename, Reason]),
+      throw({cannot_write_pid_file, PidFilename, Reason})
     end.
 
 delete_pid_file() ->
     case ejabberd:get_pid_file() of
-	false ->
-	    ok;
-	PidFilename ->
-	    file:delete(PidFilename)
+  false ->
+      ok;
+  PidFilename ->
+      file:delete(PidFilename)
     end.
 
 set_settings_from_config() ->
@@ -255,7 +255,9 @@ start_apps() ->
     ejabberd:start_app(p1_xml),
     ejabberd:start_app(p1_stringprep),
     ejabberd:start_app(p1_zlib),
-    ejabberd:start_app(p1_cache_tab).
+    ejabberd:start_app(p1_cache_tab),
+    ejabberd:start_app(erlcloud),
+    ejabberd:start_app(hackney).
 
 opt_type(net_ticktime) ->
     fun (P) when is_integer(P), P > 0 -> P end;
@@ -265,9 +267,9 @@ opt_type(loglevel) ->
     fun (P) when P >= 0, P =< 5 -> P end;
 opt_type(modules) ->
     fun (Mods) ->
-	    lists:map(fun ({M, A}) when is_atom(M), is_list(A) ->
-			      {M, A}
-		      end,
-		      Mods)
+      lists:map(fun ({M, A}) when is_atom(M), is_list(A) ->
+            {M, A}
+          end,
+          Mods)
     end;
 opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].

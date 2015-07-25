@@ -30,8 +30,8 @@
 -author('alexey@process-one.net').
 
 -export([start/0, register_mechanism/3, listmech/1,
-	 server_new/7, server_start/3, server_step/2,
-	 opt_type/1]).
+   server_new/7, server_start/3, server_step/2,
+   opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -78,12 +78,12 @@
 
 start() ->
     ets:new(sasl_mechanism,
-	    [named_table, public,
-	     {keypos, #sasl_mechanism.mechanism}]),
+      [named_table, public,
+       {keypos, #sasl_mechanism.mechanism}]),
     cyrsasl_plain:start([]),
-    cyrsasl_digest:start([]),
-    cyrsasl_scram:start([]),
-    cyrsasl_anonymous:start([]),
+    % cyrsasl_digest:start([]),
+    % cyrsasl_scram:start([]),
+    % cyrsasl_anonymous:start([]),
     ok.
 
 %%
@@ -98,12 +98,12 @@ start() ->
 register_mechanism(Mechanism, Module, PasswordType) ->
     case is_disabled(Mechanism) of
       false ->
-	  ets:insert(sasl_mechanism,
-		     #sasl_mechanism{mechanism = Mechanism, module = Module,
-				     password_type = PasswordType});
+    ets:insert(sasl_mechanism,
+         #sasl_mechanism{mechanism = Mechanism, module = Module,
+             password_type = PasswordType});
       true ->
-	  ?DEBUG("SASL mechanism ~p is disabled", [Mechanism]),
-	  true
+    ?DEBUG("SASL mechanism ~p is disabled", [Mechanism]),
+    true
     end.
 
 %%% TODO: use callbacks
@@ -112,22 +112,22 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 %%check_authzid(_State, Props) ->
 %%    AuthzId = xml:get_attr_s(authzid, Props),
 %%    case jlib:string_to_jid(AuthzId) of
-%%	error ->
-%%	    {error, "invalid-authzid"};
-%%	JID ->
-%%	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
-%%	    {U, S, R} = jlib:jid_tolower(JID),
-%%	    case R of
-%%		"" ->
-%%		    {error, "invalid-authzid"};
-%%		_ ->
-%%		    case {LUser, ?MYNAME} of
-%%			{U, S} ->
-%%			    ok;
-%%			_ ->
-%%			    {error, "invalid-authzid"}
-%%		    end
-%%	    end
+%%  error ->
+%%      {error, "invalid-authzid"};
+%%  JID ->
+%%      LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
+%%      {U, S, R} = jlib:jid_tolower(JID),
+%%      case R of
+%%    "" ->
+%%        {error, "invalid-authzid"};
+%%    _ ->
+%%        case {LUser, ?MYNAME} of
+%%      {U, S} ->
+%%          ok;
+%%      _ ->
+%%          {error, "invalid-authzid"}
+%%        end
+%%      end
 %%    end.
 
 check_credentials(_State, Props) ->
@@ -146,44 +146,44 @@ check_credentials(_State, Props) ->
 
 listmech(Host) ->
     Mechs = ets:select(sasl_mechanism,
-		       [{#sasl_mechanism{mechanism = '$1',
-					 password_type = '$2', _ = '_'},
-			 case catch ejabberd_auth:store_type(Host) of
-			   external -> [{'==', '$2', plain}];
-			   scram -> [{'/=', '$2', digest}];
-			   {'EXIT', {undef, [{Module, store_type, []} | _]}} ->
-			       ?WARNING_MSG("~p doesn't implement the function store_type/0",
-					    [Module]),
-			       [];
-			   _Else -> []
-			 end,
-			 ['$1']}]),
+           [{#sasl_mechanism{mechanism = '$1',
+           password_type = '$2', _ = '_'},
+       case catch ejabberd_auth:store_type(Host) of
+         external -> [{'==', '$2', plain}];
+         scram -> [{'/=', '$2', digest}];
+         {'EXIT', {undef, [{Module, store_type, []} | _]}} ->
+             ?WARNING_MSG("~p doesn't implement the function store_type/0",
+              [Module]),
+             [];
+         _Else -> []
+       end,
+       ['$1']}]),
     filter_anonymous(Host, Mechs).
 
 server_new(Service, ServerFQDN, UserRealm, _SecFlags,
-	   GetPassword, CheckPassword, CheckPasswordDigest) ->
+     GetPassword, CheckPassword, CheckPasswordDigest) ->
     #sasl_state{service = Service, myname = ServerFQDN,
-		realm = UserRealm, get_password = GetPassword,
-		check_password = CheckPassword,
-		check_password_digest = CheckPasswordDigest}.
+    realm = UserRealm, get_password = GetPassword,
+    check_password = CheckPassword,
+    check_password_digest = CheckPasswordDigest}.
 
 server_start(State, Mech, ClientIn) ->
     case lists:member(Mech,
-		      listmech(State#sasl_state.myname))
-	of
+          listmech(State#sasl_state.myname))
+  of
       true ->
-	  case ets:lookup(sasl_mechanism, Mech) of
-	    [#sasl_mechanism{module = Module}] ->
-		{ok, MechState} =
-		    Module:mech_new(State#sasl_state.myname,
-				    State#sasl_state.get_password,
-				    State#sasl_state.check_password,
-				    State#sasl_state.check_password_digest),
-		server_step(State#sasl_state{mech_mod = Module,
-					     mech_state = MechState},
-			    ClientIn);
-	    _ -> {error, <<"no-mechanism">>}
-	  end;
+    case ets:lookup(sasl_mechanism, Mech) of
+      [#sasl_mechanism{module = Module}] ->
+    {ok, MechState} =
+        Module:mech_new(State#sasl_state.myname,
+            State#sasl_state.get_password,
+            State#sasl_state.check_password,
+            State#sasl_state.check_password_digest),
+    server_step(State#sasl_state{mech_mod = Module,
+               mech_state = MechState},
+          ClientIn);
+      _ -> {error, <<"no-mechanism">>}
+    end;
       false -> {error, <<"no-mechanism">>}
     end.
 
@@ -233,17 +233,17 @@ filter_anonymous(Host, Mechs) ->
 
 is_disabled(Mechanism) ->
     Disabled = ejabberd_config:get_option(
-		 disable_sasl_mechanisms,
-		 fun(V) when is_list(V) ->
-			 lists:map(fun(M) -> str:to_upper(M) end, V);
-		    (V) ->
-			 [str:to_upper(V)]
-		 end, []),
+     disable_sasl_mechanisms,
+     fun(V) when is_list(V) ->
+       lists:map(fun(M) -> str:to_upper(M) end, V);
+        (V) ->
+       [str:to_upper(V)]
+     end, []),
     lists:member(Mechanism, Disabled).
 
 opt_type(disable_sasl_mechanisms) ->
     fun (V) when is_list(V) ->
-	    lists:map(fun (M) -> str:to_upper(M) end, V);
-	(V) -> [str:to_upper(V)]
+      lists:map(fun (M) -> str:to_upper(M) end, V);
+  (V) -> [str:to_upper(V)]
     end;
 opt_type(_) -> [disable_sasl_mechanisms].

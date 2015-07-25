@@ -61,7 +61,11 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {esip, ".*", {git, "https://github.com/processone/p1_sip"}},
         {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
         {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
-        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}}],
+        {ehyperloglog, ".*", {git, "https://github.com/vaxelfel/eHyperLogLog.git"}},
+        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
+        {erlcloud, ".*", {git, "https://github.com/gleber/erlcloud"}},
+        {uuid, ".*", {git, "https://github.com/avtobiff/erlang-uuid.git", "master"}},
+        {hackney, ".*", {git, "git://github.com/benoitc/hackney.git", {branch, "master"}}}],
 
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
@@ -81,7 +85,7 @@ XMLFlags = lists:foldl(
 PostHooks = [ConfigureCmd("p1_tls", ""),
              ConfigureCmd("p1_stringprep", ""),
              ConfigureCmd("p1_yaml", ""),
-	     ConfigureCmd("esip", ""),
+       ConfigureCmd("esip", ""),
              ConfigureCmd("p1_xml", XMLFlags)],
 
 CfgDeps = lists:flatmap(
@@ -128,29 +132,29 @@ CfgPostHooks = lists:flatmap(
                  end, Cfg),
 
 CfgXrefs = lists:flatmap(
-	     fun({mysql, false}) ->
-		     ["(\".*mysql.*\":_/_)"];
-		({pgsql, false}) ->
-		     ["(\".*pgsql.*\":_/_)"];
-		({pam, false}) ->
-		     ["(\"epam\":_/_)"];
-		({riak, false}) ->
-		     ["(\"riak.*\":_/_)"];
-		({riak, true}) ->
-		     % used in map-reduce function called from riak vm
-		     ["(\"riak_object\":_/_)"];
-		({json, false}) ->
-		    ["(\"jiffy\":_/_)"];
-		({zlib, false}) ->
-		     ["(\"ezlib\":_/_)"];
-		({http, false}) ->
-		     ["(\"lhttpc\":_/_)"];
-		({iconv, false}) ->
-		     ["(\"iconv\":_/_)"];
-		({odbc, false}) ->
-		     ["(\"odbc\":_/_)"];
-		(_) ->
-		     []
+       fun({mysql, false}) ->
+         ["(\".*mysql.*\":_/_)"];
+    ({pgsql, false}) ->
+         ["(\".*pgsql.*\":_/_)"];
+    ({pam, false}) ->
+         ["(\"epam\":_/_)"];
+    ({riak, false}) ->
+         ["(\"riak.*\":_/_)"];
+    ({riak, true}) ->
+         % used in map-reduce function called from riak vm
+         ["(\"riak_object\":_/_)"];
+    ({json, false}) ->
+        ["(\"jiffy\":_/_)"];
+    ({zlib, false}) ->
+         ["(\"ezlib\":_/_)"];
+    ({http, false}) ->
+         ["(\"lhttpc\":_/_)"];
+    ({iconv, false}) ->
+         ["(\"iconv\":_/_)"];
+    ({odbc, false}) ->
+         ["(\"odbc\":_/_)"];
+    (_) ->
+         []
             end, Cfg),
 
 ElixirConfig = case lists:keysearch(elixir, 1, Cfg) of
@@ -178,11 +182,11 @@ Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
           {ct_extra_params, "-ct_hooks cth_surefire "
            ++ TestConfig
            ++ "-include " ++ filename:join([Cwd, "tools"])},
-	  {xref_warnings, false},
+    {xref_warnings, false},
           {xref_checks, []},
-	  {xref_queries,
-	   [{"(XC - UC) || (XU - X - B - "
-	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
+    {xref_queries,
+     [{"(XC - UC) || (XU - X - B - "
+       ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
           {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}] ++ ElixirConfig,
 %%io:format("ejabberd configuration:~n  ~p~n", [Config]),

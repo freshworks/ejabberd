@@ -102,10 +102,36 @@ delete_session(LUser, LServer, _LResource, SID) ->
 	    {error, notfound}
     end.
 
+-spec delete_session_cleanup(binary(), binary(), binary(), sid()) ->
+			    {ok, #session{}} | {error, notfound}.
+delete_session_cleanup(LUser, LServer, _LResource, SID) ->
+    USKey = us_to_key({LUser, LServer}),
+    case eredis:q(?PROCNAME, ["HGETALL", USKey]) of
+	{ok, Vals} ->
+	    Ss = decode_session_list(Vals),
+	    case lists:keyfind(SID, #session.sid, Ss) of
+		false ->
+		    {error, notfound};
+		Session ->
+		    SIDKey = sid_to_key(SID),
+		    ServKey = server_to_key(element(2, Session#session.us)),
+		    USSIDKey = us_sid_to_key(Session#session.us, SID),
+		    {LUser1, LServer1, LResource} = Session#session.usr,
+		    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(LServer1),
+		       [LUser1, LServer1, LResource, []]),
+		    eredis:qp(?PROCNAME, [["HDEL", USKey, SIDKey],
+					  ["HDEL", ServKey, USSIDKey]])
+	    end;
+	Err ->
+	    ?ERROR_MSG("failed to delete session from redis: ~p", [Err]),
+	    {error, notfound}
+    end.
+
 -spec get_sessions() -> [#session{}].
 get_sessions() ->
     lists:flatmap(
       fun(LServer) ->
+
 	      get_sessions(LServer)
       end, ?MYHOSTS).
 
@@ -180,25 +206,33 @@ clean_table() ->
 					{_, SID} = binary_to_term(USSIDKey),
 					node(element(2, SID)) == node()
 				end, Vals),
-		      Q1 = ["HDEL", ServKey | Vals1],
-		      Q2 = lists:map(
-			     fun(USSIDKey) ->
-				     {US, SID} = binary_to_term(USSIDKey),
-				     USKey = us_to_key(US),
-				     SIDKey = sid_to_key(SID),
-				     ["HDEL", USKey, SIDKey]
-			     end, Vals1),
-		      Res = eredis:qp(?PROCNAME, [Q1|Q2]),
-		      case lists:filter(
-			     fun({ok, _}) -> false;
-				(_) -> true
-			     end, Res) of
-			  [] ->
-			      ok;
-			  Errs ->
-			      ?ERROR_MSG("failed to clean redis table for "
-					 "server ~s: ~p", [LServer, Errs])
-		      end;
+
+		      lists:foreach(
+		      	fun(USSIDKey) -> 
+					{US, SID} = binary_to_term(USSIDKey),
+					{LUser, LServer1} = US,
+					delete_session_cleanup(LUser, LServer1, <<>>, SID)		  	    		
+		      	end, Vals1);
+
+		  %     Q1 = ["HDEL", ServKey | Vals1],
+		  %     Q2 = lists:map(
+			 %     fun(USSIDKey) ->
+				%      {US, SID} = binary_to_term(USSIDKey),
+				%      USKey = us_to_key(US),
+				%      SIDKey = sid_to_key(SID),
+				%      ["HDEL", USKey, SIDKey]
+			 %     end, Vals1),
+		  %     Res = eredis:qp(?PROCNAME, [Q1|Q2]),
+		  %     case lists:filter(
+			 %     fun({ok, _}) -> false;
+				% (_) -> true
+			 %     end, Res) of
+			 %  [] ->
+			 %      ok;
+			 %  Errs ->
+			 %      ?ERROR_MSG("failed to clean redis table for "
+				% 	 "server ~s: ~p", [LServer, Errs])
+		  %     end;
 		  Err ->
 		      ?ERROR_MSG("failed to clean redis table for "
 				 "server ~s: ~p", [LServer, Err])
