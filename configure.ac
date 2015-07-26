@@ -282,5 +282,6 @@ AC_SUBST(iconv)
 AC_SUBST(debug)
 AC_SUBST(lager)
 AC_SUBST(tools)
+AC_SUBST(livechat_dir)
 
 AC_OUTPUT

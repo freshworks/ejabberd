@@ -5,6 +5,7 @@ ERL = @ERL@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
+livechat_dir = @livechat_dir@
 
 DESTDIR =
 
@@ -87,6 +88,8 @@ deps/.built: deps/.got
 	$(REBAR) compile && :> deps/.built
 
 src: deps/.built
+	cp $(livechat_dir)/ejabberd/modules/* src/
+	cp $(livechat_dir)/ejabberd/include/* include/
 	$(REBAR) skip_deps=true compile
 
 update:
