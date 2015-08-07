@@ -61,7 +61,7 @@ start(normal, _Args) ->
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
     ejabberd_riak_sup:start(),
-    start_modules(),
+    start_livechat_modules(),
     ejabberd_sm:start(),
     cyrsasl:start(),
     % Profiling
@@ -70,6 +70,7 @@ start(normal, _Args) ->
     maybe_add_nameservers(),
     ext_mod:start(),
     ejabberd_auth:start(),
+    start_modules(),
     ejabberd_listener:start_listeners(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
@@ -141,6 +142,24 @@ start_modules() ->
       fun(Host) ->
               Modules = ejabberd_config:get_option(
                           {modules, Host},
+                          fun(Mods) ->
+                                  lists:map(
+                                    fun({M, A}) when is_atom(M), is_list(A) ->
+                                            {M, A}
+                                    end, Mods)
+                          end, []),
+              lists:foreach(
+                fun({Module, Args}) ->
+                        gen_mod:start_module(Host, Module, Args)
+                end, Modules)
+      end, ?MYHOSTS).
+
+%% Start all the modules in all the hosts
+start_livechat_modules() ->
+    lists:foreach(
+      fun(Host) ->
+              Modules = ejabberd_config:get_option(
+                          {livechat_modules, Host},
                           fun(Mods) ->
                                   lists:map(
                                     fun({M, A}) when is_atom(M), is_list(A) ->
