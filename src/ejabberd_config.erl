@@ -36,7 +36,7 @@
          prepare_opt_val/4, convert_table_to_binary/5,
          transform_options/1, collect_options/1,
          convert_to_yaml/1, convert_to_yaml/2,
-         env_binary_to_list/2, opt_type/1, may_hide_data/1]).
+         env_binary_to_list/2, opt_type/1, may_hide_data/1, replace_module/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").

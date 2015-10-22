@@ -168,7 +168,8 @@ start_livechat_modules() ->
                           end, []),
               lists:foreach(
                 fun({Module, Args}) ->
-                        gen_mod:start_module(Host, Module, Args)
+                        ReplacedModule = ejabberd_config:replace_module(Module),
+                        gen_mod:start_module(Host, ReplacedModule, Args)
                 end, Modules)
       end, ?MYHOSTS).
 
@@ -291,4 +292,12 @@ opt_type(modules) ->
           end,
           Mods)
     end;
-opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].
+
+opt_type(livechat_modules) ->
+    fun (Mods) ->
+      lists:map(fun ({M, A}) when is_atom(M), is_list(A) ->
+            {M, A}
+          end,
+          Mods)
+    end;
+opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime, livechat_modules].

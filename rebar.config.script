@@ -65,7 +65,8 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
         {erlcloud, ".*", {git, "https://github.com/gleber/erlcloud"}},
         {uuid, ".*", {git, "https://github.com/avtobiff/erlang-uuid.git", "master"}},
-        {hackney, ".*", {git, "git://github.com/benoitc/hackney.git", {branch, "master"}}}],
+        {hackney, ".*", {git, "git://github.com/benoitc/hackney.git", {branch, "master"}}},
+        {eredis_pool, ".*", {git , "git://github.com/leanand/eredis_pool.git"}}],
 
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
