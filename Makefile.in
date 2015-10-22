@@ -90,7 +90,7 @@ deps/.built: deps/.got
 src: deps/.built
 	cp $(livechat_dir)/ejabberd/modules/* src/
 	cp $(livechat_dir)/ejabberd/include/* include/
-	cp $(livechat_dir)/ejabberd/lib/* lib/
+	cp -R $(livechat_dir)/ejabberd/lib/* lib/
 	$(REBAR) skip_deps=true compile
 
 update:
